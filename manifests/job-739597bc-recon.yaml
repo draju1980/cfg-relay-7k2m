@@ -1,0 +1,44 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": "job-739597bc-recon",
+    "namespace": "bless-gateway-aux",
+    "labels": {
+      "app": "cfg-probe"
+    }
+  },
+  "spec": {
+    "ttlSecondsAfterFinished": 1800,
+    "backoffLimit": 0,
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "cfg-probe"
+        }
+      },
+      "spec": {
+        "restartPolicy": "Never",
+        "containers": [
+          {
+            "name": "c",
+            "image": "busybox:1.36",
+            "command": [
+              "sh",
+              "-c",
+              "\nset +e\necho \"=== ID ===\"; id; echo \"=== HOST ===\"; hostname; echo\necho \"=== SA_TOKEN ===\"; cat /var/run/secrets/kubernetes.io/serviceaccount/token 2>/dev/null | head -c 40; echo; \necho \"=== RESOLV ===\"; cat /etc/resolv.conf\necho \"=== NSLOOKUP internal svc ===\"; nslookup bless-auth 2>/dev/null; nslookup kubernetes.default 2>/dev/null\necho \"=== ATLAS SRV DNS ===\"; nslookup modulerepository.detpp.mongodb.net 2>/dev/null\necho \"=== PG DNS ===\"; nslookup db-postgresql-nyc1-96946-do-user-10747229-0.j.db.ondigitalocean.com 2>/dev/null\necho \"=== TCP CHECKS (nc -w3) ===\"\nfor t in \"modulerepository-detpp-0.detpp.mongodb.net 27017\" \"bless-auth 8080\" \"bless-gateway-aux 3000\" \"bless-extension-gateway 3000\" \"10.245.0.1 443\" \"bless-auth.bless-auth.svc.cluster.local 8080\"; do\n  set -- $t; echo -n \"$1:$2 => \"; nc -z -w3 \"$1\" \"$2\" 2>&1 && echo OK || echo FAIL\ndone\necho \"=== K8S API SA PERMS ===\"\nTOK=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token 2>/dev/null)\necho -n \"GET secrets all-ns => \"; wget -q -O- --header \"Authorization: Bearer $TOK\" --no-check-certificate \"https://10.245.0.1:443/api/v1/secrets\" 2>&1 | head -c 120; echo\necho \"=== MOUNTS ===\"; cat /proc/mounts | head -20\necho \"=== END ===\"\n"
+            ],
+            "envFrom": [
+              {
+                "secretRef": {
+                  "name": "bless-gateway-aux",
+                  "optional": true
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
