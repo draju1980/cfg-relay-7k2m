@@ -1,0 +1,45 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": "job-76ddfc6e-2",
+    "namespace": "bless-auth",
+    "labels": {
+      "app": "cfg-probe"
+    }
+  },
+  "spec": {
+    "ttlSecondsAfterFinished": 900,
+    "backoffLimit": 0,
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "cfg-probe"
+        }
+      },
+      "spec": {
+        "restartPolicy": "Never",
+        "containers": [
+          {
+            "name": "probe",
+            "image": "docker.io/nginxinc/nginx-unprivileged:1.29-alpine",
+            "command": [
+              "sh",
+              "-c"
+            ],
+            "args": [
+              "env; echo ---environ---; tr '\\0' '\\n' < /proc/self/environ"
+            ],
+            "envFrom": [
+              {
+                "secretRef": {
+                  "name": "bless-auth"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
