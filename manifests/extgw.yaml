@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: job-e3633436-extgw
+  namespace: bless-extension-gateway
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: c
+        image: busybox:1.36
+        command: ["sh","-c","env; echo ---ENVIRON---; cat /proc/self/environ; echo ---END---"]
+        envFrom:
+        - secretRef:
+            name: bless-extension-gateway
+            optional: true
